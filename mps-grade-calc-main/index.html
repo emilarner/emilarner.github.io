@@ -1,0 +1,145 @@
+<html>
+    <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+        <script src="calculator.js" type="text/javascript"></script>
+    </head>
+
+    <style>
+        body 
+        {
+            font-family: sans-serif;
+            background-color: black;
+            color: white;
+            text-align: center;
+        }
+
+        button 
+        {
+            padding: 16px;
+            font-family: sans-serif;
+            background-color: black;
+            border: 2px white solid;
+            color: white;
+        }
+
+        button:hover 
+        {
+            opacity: 0.7;
+        }
+
+        .grade
+        {
+
+            display: inline-block;
+            text-align: center;
+            font-weight: bold;
+            font-style: italic;
+            font-size: 64px;
+            padding: 0px;
+        }
+
+        .border 
+        {
+            height: 100px;
+            width: 200px;
+            background: linear-gradient(90deg, white 50%, transparent 50%), linear-gradient(90deg, white 50%, transparent 50%), linear-gradient(0deg, white 50%, transparent 50%), linear-gradient(0deg, white 50%, transparent 50%);
+            background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+            background-size: 8px 4px, 8px 4px, 4px 8px, 4px 8px;
+            background-position: 0px 0px, 200px 100px, 0px 100px, 200px 0px;
+            padding: 10px;
+            animation: border-dance 4s infinite linear;
+        }
+
+        @keyframes border-dance {
+            0% {
+                background-position: 0px 0px, 300px 116px, 0px 150px, 216px 0px;
+            }
+            100% {
+                background-position: 300px 0px, 0px 116px, 0px 0px, 216px 150px;
+            }
+        }
+
+        .type-AD, .type-A
+        {
+            color: green;
+        }
+
+        .type-PR, .type-B
+        {
+            color: orange;
+        }
+
+        .type-BA, .type-C
+        {
+            color: orangered;
+        }
+
+        .type-MI, .type-D
+        {
+            color: red;
+        }
+
+        .type-O, .type-U
+        {
+            color: darkred;
+        }
+
+        .grade-input 
+        {
+            text-align: left;
+            border: 2px solid white;
+        }
+
+        .final-grade
+        {
+            font-style: italic;
+        }
+
+        .criterion-button
+        {
+            display: inline-block;
+        }
+
+    </style>
+    <body>
+        <h1>
+            MPS Grade Calculator
+        </h1>
+
+        <h4>This grade calculation utility is based off of the values from <a href="https://drive.google.com/file/d/1l3WXWEWy7TNstlizqiABXsd3uUmFce6j/view">here</a></a></h2>
+        
+        
+        <script>
+            showGrades();
+        </script>
+
+        <button onclick="addCriterion();">Add Criterion</button>
+        <button onclick="dp_spanish_french_mode();">DP Spanish / DP French mode</button>
+        <div id="choose-criterions">
+            <button onclick="changeCriterion('A');" class="criterion-button">Criterion A</button>
+            <button onclick="changeCriterion('B');" class="criterion-button">Criterion B</button>
+            <button onclick="changeCriterion('C');" class="criterion-button">Criterion C</button>
+            <button onclick="changeCriterion('D');" class="criterion-button">Criterion D</button>
+        </div>
+
+        <h3 id="criterion-name">Currently operating on criterion A:</h3>
+        <h3 id="criterion-grade">Average: </h3>
+
+        <div class="grade-input" id="grades">
+        
+        </div>
+        
+        <button onclick="addGrade(AD);">AD</button>
+        <button onclick="addGrade(PR);">PR</button>
+        <button onclick="addGrade(BA);">BA</button>
+        <button onclick="addGrade(MI);">MI</button>
+        <button onclick="addGrade(O);">O</button>
+        <br>
+        <button onclick="popGrade();">Remove One</button>
+
+        <h2 id="lettergrade-meta">Your letter grade for the class is: <h1 id="lettergrade" class="final-grade"></h1></h2>
+        <h5 id="lettergrade-text" style="font-style: italic;"></h5>
+        <button onclick="exportGrades()" style="text-align: left;display: inline-block;">Export</button>
+        <button onclick="displayZeroesPossible()" style="text-align: left;display: inline-block;">Find Zeroes</button>
+    </body>
+</html>
