@@ -34,20 +34,13 @@
             text-align: center;
             font-weight: bold;
             font-style: italic;
-            font-size: 64px;
-            padding: 0px;
+            font-size: 45px;
+            padding: 8px;
         }
 
         .border 
         {
-            height: 100px;
-            width: 200px;
-            background: linear-gradient(90deg, white 50%, transparent 50%), linear-gradient(90deg, white 50%, transparent 50%), linear-gradient(0deg, white 50%, transparent 50%), linear-gradient(0deg, white 50%, transparent 50%);
-            background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
-            background-size: 8px 4px, 8px 4px, 4px 8px, 4px 8px;
-            background-position: 0px 0px, 200px 100px, 0px 100px, 200px 0px;
-            padding: 10px;
-            animation: border-dance 4s infinite linear;
+            border: solid 2px white;
         }
 
         @keyframes border-dance {
@@ -100,14 +93,20 @@
             display: inline-block;
         }
 
+
+
+        .datatable, td, th
+        {
+            border: 2px white solid;
+
+        }
+
     </style>
     <body>
         <h1>
             MPS Grade Calculator
         </h1>
-
-        <h4>This grade calculation utility is based off of the values from <a href="https://drive.google.com/file/d/1l3WXWEWy7TNstlizqiABXsd3uUmFce6j/view">here</a></a></h2>
-        
+        <h5>Version: 1.1</h5>
         
         <script>
             showGrades();
@@ -134,12 +133,26 @@
         <button onclick="addGrade(BA);">BA</button>
         <button onclick="addGrade(MI);">MI</button>
         <button onclick="addGrade(O);">O</button>
+        
         <br>
         <button onclick="popGrade();">Remove One</button>
 
         <h2 id="lettergrade-meta">Your letter grade for the class is: <h1 id="lettergrade" class="final-grade"></h1></h2>
         <h5 id="lettergrade-text" style="font-style: italic;"></h5>
+        <h4 id="lettergrade-raw">Based on the raw score of: </h2>
+
         <button onclick="exportGrades()" style="text-align: left;display: inline-block;">Export</button>
         <button onclick="displayZeroesPossible()" style="text-align: left;display: inline-block;">Find Zeroes</button>
+        <button onclick="window.location.replace('notes.html');" style="text-align: left;display: inline-block;">Notes</button>
+        <button onclick="toggleGradeStrings()">Toggle Texts</button>
+
+        <br>
+        <br>
+        <br>
+        <center>
+            <div id="gradeTable">
+                
+            </div>
+        </center>
     </body>
 </html>

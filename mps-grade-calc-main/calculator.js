@@ -1,7 +1,12 @@
 /* 
 Not going to use classes, since I am not fond of JavaScript, nor am I comfortable with it.
 Additionally, this program isn't too complex--as of yet--to warrant such a high-level features.
+
+Really starting to regret it.
 */
+
+var gradeStringOn = (window.localStorage.getItem("gradeStringOn") == null) ? false : 
+                    window.localStorage.getItem("gradeStringOn");
 
 var criterions = {
     "A": {
@@ -47,13 +52,13 @@ const MI = 1.1;
 const O = 0;
 
 const ADRange = [3.5, 4];
-const PRRange = [2.5, 3.49];
-const BARange = [1.5, 2.49];
-const MIRange = [0.1, 1.49];
+const PRRange = [2.5, 3.499];
+const BARange = [1.5, 2.499];
+const MIRange = [0.1, 1.499];
 
 
 const A = [3.40, 4];
-/*        ^^^ MPS made an error in their detailing of their standard's based grading algorithm.
+/*        ^^^ MPS made an error in their detailing of their standard's based grading algorithm???
 Consider having an AD, PR, PR, and another PR.
 AD = 4; PR = 3.2
 However, the arithmetic mean of {4, 3.2, 3.2, 3.2} is 3.4.
@@ -131,10 +136,16 @@ function isBetween(x, range)
 	return range[0] <= x && x <= range[1];
 }
 
+/* If a number, x, is within a range of two other numbers, LIKE SO: [a, b) */
+function isOpenBetween(x, range)
+{
+	return range[0] <= x && x <= range[1];
+}
+
 /* Using the above function and resources from MPS, determine the final letter grade. */
 /* If it is outside of the domain described by MPS, undefined is returned */
 /* (This should NOT happen.) */
-function determineLetterGradeFromAverage(average)
+function old_determineLetterGradeFromAverage(average)
 {
     if (isBetween(average, A))
         return "A";
@@ -155,8 +166,27 @@ function determineLetterGradeFromAverage(average)
         return undefined; 
 }
 
-/* Given all criterions, calculate averages and display the letter grade. */
-function determineLetterGrade(crits)
+function determineLetterGradeFromAverage(average)
+{
+    if (3.405 <= average && average <= 4.000)
+        return "A";
+
+    if (2.745 <= average && average < 3.405)
+        return "B";
+
+    if (2.145 <= average && average < 2.745)
+        return "C";
+
+    if (1.595 <= average && average < 2.145)
+        return "D";
+
+    if (0 <= average && average < 1.595)
+        return "U";
+
+    return undefined;
+}
+
+function determineLetterGradeRaw(crits)
 {
     let localSum = 0;
     let numberOfCriterions = 0;
@@ -171,8 +201,13 @@ function determineLetterGrade(crits)
     }
 
     let average = parseFloat((localSum/numberOfCriterions).toFixed(3));
-    console.log(average);
-    
+    return average;
+}
+
+/* Given all criterions, calculate averages and display the letter grade. */
+function determineLetterGrade(crits)
+{
+    let average = determineLetterGradeRaw(crits);
     return determineLetterGradeFromAverage(average);
 }
 
@@ -220,6 +255,7 @@ function determineCriterionGrade(average)
         return O;
 }
 
+
 function setCriterionAverage(criterion)
 {
     let criterionAverage = criterionGradeToString(
@@ -245,7 +281,6 @@ function showGrades(criterion)
 
     let currentGrades = criterions[criterion]["currentGrades"];
 
-    console.log(criterions[criterion]["currentGrades"]);
 
     /* NULL amount of grades. */
     /* This is buggy, for some reason. */
@@ -405,6 +440,11 @@ function addGrade(grade)
     showGrades(currentCriterion);
 
     let finalLetterGrade = determineLetterGrade(criterions);
+    let finalLetterGradeRaw = determineLetterGradeRaw(criterions);
+
+    document.getElementById("lettergrade-raw").innerText = 
+                        `Based on the raw score of: ${finalLetterGradeRaw}`;
+
     document.getElementById("lettergrade").className = "final-grade type-" + finalLetterGrade; 
     document.getElementById("lettergrade").innerText = finalLetterGrade;
     if (languageMode) 
@@ -413,11 +453,15 @@ function addGrade(grade)
                             languageModeGradeColor(finalLetterGrade);
     }
 
-    let letterGradeText = languageMode ? randomChoice(gradeMessagesForLanguage[finalLetterGrade]) 
+    if (gradeStringOn) 
+    {
+        let letterGradeText = languageMode ? randomChoice(gradeMessagesForLanguage[finalLetterGrade]) 
                                     : randomChoice(gradeMessages[finalLetterGrade]);
 
-    document.getElementById("lettergrade").title = letterGradeText;
-    document.getElementById("lettergrade-text").innerText = letterGradeText;
+
+        document.getElementById("lettergrade").title = letterGradeText;
+        document.getElementById("lettergrade-text").innerText = letterGradeText;
+    }
 }
 
 
@@ -482,6 +526,9 @@ function zeroesPossible(criterions, target) // -> object { ... }
 
 function displayZeroesPossible()
 {
+    alert("Still under construction... you can do this manually for now.");
+    return;
+
     const validGrades = ["A", "B", "C", "D", "U"];
     let targetGrade = prompt("What is your target letter grade?: ");
 
@@ -502,4 +549,47 @@ function displayZeroesPossible()
     }
 
     alert(message);
+}
+
+function exportGrades()
+{
+    gradeTable = document.getElementById("gradeTable");
+    gradeTable.innerHTML = "";
+
+    /* I'm lazy and I don't want to deal with HTML abstractions. */
+    /* Who cares if this is inefficient and ugly: it works! */
+
+    let table = "<table class='datatable'>";
+    table += "<tr>";
+    table += "<th>Criterion</th>";
+    table += "<th>Grades</th>";
+    table += "</tr>";
+
+    /* Go through each criterion, again! */
+    for (let criterion in criterions)
+    {
+        table += "<tr>";
+
+        //let criterion = criterions.keys()[i];
+        let grades = criterions[criterion]["currentGrades"];
+        let gradeString = "";
+
+        for (let j = 0; j < grades.length; j++)
+            gradeString += criterionGradeToString(grades[j]) + " ";
+
+        table += `<td>${criterion}</td>`;
+        table += `<td>${gradeString}</td>`;        
+
+        table += "</tr>";
+    }
+
+    table += "</table>";
+    gradeTable.innerHTML = table;
+}
+
+/* Toggles the grade string. */
+function toggleGradeStrings()
+{
+    let opposite = !gradeStringOn;
+    window.localStorage.setItem("gradeStringOn", opposite);
 }
