@@ -1,6 +1,7 @@
 <html>
     <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+        <script src="infinitecampus.js" type="text/javascript"></script>
         <script src="calculator.js" type="text/javascript"></script>
     </head>
 
@@ -106,7 +107,7 @@
         <h1>
             MPS Grade Calculator
         </h1>
-        <h5>Version: 1.1</h5>
+        <h5>Version: 1.2 - Infinite Campus Integration</h5>
         
         <script>
             showGrades();
@@ -128,16 +129,16 @@
         
         </div>
         
-        <button onclick="addGrade(AD);">AD</button>
-        <button onclick="addGrade(PR);">PR</button>
-        <button onclick="addGrade(BA);">BA</button>
-        <button onclick="addGrade(MI);">MI</button>
-        <button onclick="addGrade(O);">O</button>
+        <button onclick="addGrade(4);">AD</button>
+        <button onclick="addGrade(3);">PR</button>
+        <button onclick="addGrade(2);">BA</button>
+        <button onclick="addGrade(1);">MI</button>
+        <button onclick="addGrade(0);">O</button>
         
         <br>
         <button onclick="popGrade();">Remove One</button>
 
-        <h2 id="lettergrade-meta">Your letter grade for the class is: <h1 id="lettergrade" class="final-grade"></h1></h2>
+        <h2 id="lettergrade-meta">Your letter grade for the class is:</h2> <h1 id="lettergrade" class="final-grade"></h1>
         <h5 id="lettergrade-text" style="font-style: italic;"></h5>
         <h4 id="lettergrade-raw">Based on the raw score of: </h2>
 
@@ -145,6 +146,8 @@
         <button onclick="displayZeroesPossible()" style="text-align: left;display: inline-block;">Find Zeroes</button>
         <button onclick="window.location.replace('notes.html');" style="text-align: left;display: inline-block;">Notes</button>
         <button onclick="toggleGradeStrings()">Toggle Texts</button>
+        <button onclick="fillInGrades()">Fill In Grades (from IC)</button>
+        <button onclick="window.location.replace('ic.html');">IC API</button>
 
         <br>
         <br>

@@ -1,0 +1,49 @@
+<html>
+    <title>Infinite Campus Reverse Engineering</title>
+    <h1>Reverse Engineering Infinite Campus</h1>
+
+    <style>
+        body 
+        {
+            font-family: sans-serif;
+            background-color: black;
+            color: white;
+        }
+
+        li
+        {
+            font-style: italic;
+            font-size: large;
+            padding: 2px;
+        }
+    </style>
+
+    <p>
+        In order to automatically get the grades from a student's Infinite Campus, it is required to reverse engineer their API, because they do not make one publicly available for developers. This turned out to be somewhat easy. To help others to do this and to explain how it works, this page will include information regarding that.
+    </p>
+
+    <p>
+        First of all, we cannot access the Infinite Campus API from browser JavaScript, due to a thing called CORS! Therefore, we need to make a backend server that can do it in another programming language; then, we disable CORS on that backend so that browser JavaScript can interact with it, with the backend serving as a proxy. We used a Flask server made in Python, running on a replit instance.
+    </p>
+
+    <p>
+        From simple observation, one can see the networking traffic that Infinite Campus makes when clicking the login button on the dedicated website for Milwaukee Public Schools. We see that the method of authorization is via multiple cookies. There is a very useful feature in Chrome and Chrome-based browsers that lets you take a request and turn it into a Python <i>requests</i> command, to reproduce and hack at it. Unfortunately, <i>requests</i> turned out to not work for some reason, so we used <i>httpx</i> for the login. Upon calling the login endpoint at <i>https://milwaukeewi.infinitecampus.org/campus/verify.jsp</i>, with the <i>urlencoded</i> POST form data of:
+
+        <pre style="overflow-wrap: break-word; ">
+            username={username}&password={password_url}&portalUrl=portal%2Fstudents%2Fmilwaukee.jsp%3F%26rID%3D0.778348687641898&appName=milwaukee&url=nav-wrapper&lang=en&portalLoginPage=students
+        </pre>
+
+    </p>
+
+    <p>
+        ... you receive no useful data, besides several cookies. We save these cookies, because they will authorize every subsequent request. In order to simplify our program, we converted the dictionary of cookies into a Base64-encoded JSON string, which was then sent to the JavaScript client for every subsequent request. A function exists which will decode this 'token' back into a dictionary of cookies, which will then be provided via requests for authentication.
+    </p>
+
+    <p>
+        Then, the <i>https://milwaukeewi.infinitecampus.org/campus/apps/portal/student/grades</i> endpoint will effectively list every single class. I'll spare you the details, but the important things we need are: the class and its IDs. Unfortunately, there are many IDs associated with a class, but the one we want is its <i>sectionID</i>. You must GET the endpoint above, WITH the authentication cookies mentioned previously--or else you'll be denied access. The JSON that comes from such a request is very large--we only need a very tiny section of that for our purposes. 
+    </p>
+
+    <p>
+        Once you've selected a class, using its sectionID, we can <i>GET</i> this endpoint to get the grades (<i>kinda</i>): <i>https://milwaukeewi.infinitecampus.org/campus/api/portal/assignment/byDateRange?startDate=2020-12-03T00:00:00&endDate=2099-12-17T00:00:00&sectionID={id}</i>--again, you need the cookies from above set or else it will not work. It's hacky, but we can just set the date ranges to impossibly large to absolutely get everything. We get the grades... but we need to organize the grades by criterions, because that's how MPS Standard's Based Grading works! There are a few IDs associated with the array of grades  
+    </p>
+</html>

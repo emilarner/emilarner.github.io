@@ -5,6 +5,10 @@ Additionally, this program isn't too complex--as of yet--to warrant such a high-
 Really starting to regret it.
 */
 
+const infiniteCampusBackend = "https://infinite-campus-backend.emilarner.repl.co";
+
+var importedGrades = false; 
+
 var gradeStringOn = (window.localStorage.getItem("gradeStringOn") == null) ? false : 
                     window.localStorage.getItem("gradeStringOn");
 
@@ -89,6 +93,12 @@ const gradeMessagesForLanguage = {
     "U": ["Short for 'U failed lol xD'", "Failed, but I don't blame you", "U failed... trying"]
 };
 
+
+function changeLetterGradeMeta(className)
+{
+    element = document.getElementById("lettergrade-meta");
+    element.innerText = `Grade in ${className} is:`;
+}
 
 function languageModeGradeColor(grade)
 {
@@ -233,6 +243,27 @@ function criterionGradeToString(grade)
     }
 }
 
+function gradeToString(grade)
+{
+    switch (grade)
+    {
+        case 4:
+            return "AD";
+
+        case 3:
+            return "PR";
+
+        case 2:
+            return "BA";
+
+        case 1:
+            return "MI";
+
+        case 0:
+            return "O";
+    }
+}
+
 /* Determine the criterion's average grade. Note, it is not as simple as it looks... */
 function determineCriterionGrade(average)
 {
@@ -293,7 +324,7 @@ function showGrades(criterion)
     for (let i = 0; i < currentGrades.length; i++)
     {
         let grade = currentGrades[i];
-        let gradeString = criterionGradeToString(grade);
+        let gradeString = gradeToString(grade);
 
         let element = document.createElement("div");
 
@@ -302,7 +333,7 @@ function showGrades(criterion)
         element.className = "border grade type-" + gradeString;
         element.id = (i+1).toString();
         
-        element.appendChild(document.createTextNode(criterionGradeToString(grade)));
+        element.appendChild(document.createTextNode(gradeString));
         
         document.getElementById("grades").appendChild(element);
     }
@@ -587,9 +618,125 @@ function exportGrades()
     gradeTable.innerHTML = table;
 }
 
+function isNumeric(str) 
+{
+    if (typeof str != "string") return false // we only process strings!  
+    return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+           !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+}
+
 /* Toggles the grade string. */
 function toggleGradeStrings()
 {
     let opposite = !gradeStringOn;
     window.localStorage.setItem("gradeStringOn", opposite);
+}
+
+function standardsToNumbers(standard)
+{
+    if (standard == "AD")
+        return 4;
+
+    if (standard == "PR")
+        return 3;
+
+    if (standard == "BA")
+        return 2;
+
+    if (standard == "MI")
+        return 1;
+
+    if (standard == "O")
+        return 0;
+}
+
+function fillInGradesHandler(classArray)
+{
+    let textRepresentation = "";
+
+    for (let i = 0; i < classArray.length; i++)
+        textRepresentation += `${i}: ${classArray[i].toString()}`;
+
+    textRepresentation += "99: exit";
+
+    let selection = null;
+    let classSelection = null;
+
+    while (true)
+    {
+        let whichOne = prompt(textRepresentation);
+
+        /* Sanity check. */
+        if (!isNumeric(whichOne)) 
+        {
+            alert(`${whichOne} is not a valid input.`);
+            continue;
+        }
+
+        /* Exit out of the function. */
+        if (whichOne == "99")
+            return;
+
+        selection = parseInt(whichOne);
+
+        /* If it's outside of the range. */
+        if (!(0 <= selection && selection <= (classArray.length - 1)))
+        {
+            alert(`${whichOne} is outside of the range of 0-${classArray.length - 1}`);
+            continue;
+        }
+
+        classSelection = classArray[selection];
+        break;
+    }
+
+    console.log(classSelection.toString());
+    changeLetterGradeMeta(classSelection.name);
+    classSelection.getGrades(criterionsTable => {
+        let firstCriterion = null;
+
+        console.log(criterionsTable);
+
+        for (const criterion in criterionsTable)
+        {
+            if (firstCriterion == null)
+                firstCriterion = criterion;
+
+            if (!(criterion in criterions))
+                addCriterionByValue(criterion);
+            
+            changeCriterion(criterion);
+            let grades = criterionsTable[criterion];
+
+            console.log("Grades: " + grades);
+
+            for (let i = 0; i < grades.length; i++)
+            {
+                aGrade = grades[i];
+                addGrade(standardsToNumbers(aGrade));
+            }
+        }
+
+        showGrades(firstCriterion);
+    });
+}
+
+function fillInGrades()
+{
+    if (importedGrades)
+    {
+        alert("You've already imported grades. Refresh the page to do it again for a new class.");
+        return;
+    }
+
+
+    let infiniteCampus = new InfiniteCampus(infiniteCampusBackend, fillInGradesHandler);
+
+    alert("This is experimental! It is not guaranteed to work, especially with DP French or Spanish!");
+
+    let username = prompt("What's your Infinite Campus username?: ");
+    let password = prompt("What's your Infinite Campus password?: ");
+
+    infiniteCampus.login(username, password);
+    importedGrades = true;
 }
