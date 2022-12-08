@@ -42,8 +42,6 @@ class Class
     /* Get an array of Criterion(s) with all grades. */
     getGrades(callBack)
     {
-        console.log(`${this.name}: ${this.id}`);
-
         postData(`${this.endpoint}/get-grades/${this.id}/`, {
             "token": this.token
         }).then(text => {
@@ -75,10 +73,9 @@ class Class
                 /* This could be optimized: criterions are usually first, so we could */
                 /* just break. BUT, I'm not sure if it's guaranteed. */
                 if (!taskName.startsWith("Criterion"))
-                    continue;
+                    break;
                 
-                
-        
+            
 
                 let criterionName = taskName.split("Criterion ")[1].split(":")[0];
                 let criterionID = task["taskID"];
@@ -99,11 +96,15 @@ class Class
                     continue;
 
                 let taskID = grade["taskID"];
-                let hasMultipleScores = grade["hasMultipleScores"]
+                let hasMultipleScores = grade["hasMultipleScores"];
 
                 /* Do shit normally. */
-                if (!hasMultipleScores) 
+                if (hasMultipleScores == undefined || !hasMultipleScores) 
                 {
+                    /* Differentiate between graded assignments and practice ones. */
+                    if (!grade["isValidRubric"])
+                        continue;
+
                     let tmpCriterionTable = {
 
                     };
@@ -120,27 +121,38 @@ class Class
                 }).then(text => {
                     let json = JSON.parse(text);
                     let scores = json["scores"];
+
+                    let gradingCorrespondence = {};
                     let gradingAlignments = json["gradingAlignments"];
 
+                    /* Go through each grading alignment and assign an alignment ID to the */
+                    /* corresponding criterion. */ 
+                    for (let j = 0; j < gradingAlignments.length; j++) 
+                    {
+                        let alignment = gradingAlignments[j];
+                        gradingCorrespondence[alignment["alignmentID"]] = alignment["taskID"];
+                    }
 
-
+                    let tmpCriterionTable = {};
 
                     /* Go through each score. */
                     for (let j = 0; j < scores.length; j++)
                     {
-                        let tmpCriterionTable = {};
-                        let criterionID = gradingAlignments[j]["taskID"];
                         let score = scores[j];
                         let scoreGrade = score["score"];
+                        let groupActivityID = score["groupActivityID"];
+                        
+                        let criterionID = gradingCorrespondence[groupActivityID];
+
+                        if (id2criterion[criterionID] == undefined)
+                        {
+                            alert(id2criterion);
+                        }
 
                         tmpCriterionTable[id2criterion[criterionID]] = [scoreGrade];
-                        callBack(tmpCriterionTable);
-                        console.log(`Score Grade: ${scoreGrade}`);
-                        //criterionTable[id2criterion[criterionID]].push(scoreGrade);
                     }
 
-                    
-                    //callBack(criterionTable);
+                    callBack(tmpCriterionTable);
                 });
             }
 
@@ -174,8 +186,7 @@ class InfiniteCampus
         this.getClasses(tok);
     }
 
-    /* Login to infinite campus, and store the necessary site keys. */
-    login(username, password)
+    login(username, password, on_autherr)
     {
         this.username = username;
 
@@ -184,7 +195,15 @@ class InfiniteCampus
             "password": password
         }).then((token) => {
             this.token = token;
-            this.getClasses();
+
+            if (token == "0")
+            {
+                on_autherr(this);
+                return;
+            }
+
+            if (this.getClasses != null)
+                this.getClasses();
         });
     }
 
@@ -219,19 +238,3 @@ class InfiniteCampus
         });
     }
 }
-
-/*
-var inf = new InfiniteCampus(
-    "https://infinite-campus-backend.emilarner.repl.co", 
-    aClass => {
-        let oneClass = aClass[0];
-        console.log(oneClass.toString());
-
-        oneClass.getGrades(criterionsMap => {
-            console.log(criterionsMap);
-        });
-    }
-);
-
-inf.login("s8931370", "09/02/05");
-*/

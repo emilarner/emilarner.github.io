@@ -31,6 +31,8 @@ var criterions = {
     }
 };
 
+var criterionCopy = null;
+
 const dp_spanish_french_criterions = [
     "E",
     "F",
@@ -133,7 +135,7 @@ function randomChoice(array)
 function gradeAverage(grades)
 {
     let sum = 0;
-    for (var i = 0; i < grades.length; i++)
+    for (let i = 0; i < grades.length; i++)
         sum += grades[i];
         
     let average = sum/grades.length;
@@ -327,11 +329,11 @@ function showGrades(criterion)
         let gradeString = gradeToString(grade);
 
         let element = document.createElement("div");
-
-
         
-        element.className = "border grade type-" + gradeString;
+        element.className = `border grade type-${gradeString}`;
         element.id = (i+1).toString();
+        element.title = "Click to remove this grade.";
+        element.onclick = popGradeByID;
         
         element.appendChild(document.createTextNode(gradeString));
         
@@ -445,6 +447,30 @@ async function dp_spanish_french_mode()
     languageMode = true;
 }
 
+function popGradeByID(event)
+{
+    let id = parseInt(event.target.id) - 1;
+    document.getElementById((id + 1).toString()).remove();
+
+    let currentGrades = criterions[currentCriterion]["currentGrades"];
+    let item = criterions[currentCriterion]["currentGrades"][id];
+    
+    criterions[currentCriterion]["currentGrades"].splice(id, 1);
+
+
+    criterions[currentCriterion]["currentAverage"] = gradeAverage(
+        criterions[currentCriterion]["currentGrades"]
+    );
+
+    let finalLetterGrade = determineLetterGrade(criterions);
+    
+    document.getElementById("lettergrade").className = "final-grade type-" + finalLetterGrade; 
+    document.getElementById("lettergrade").innerText = finalLetterGrade;
+
+    setCriterionAverage(currentCriterion);
+    showGrades(currentCriterion);
+}
+
 /* Remove the latest grade from the current criterion, then update the table. */
 function popGrade()
 {
@@ -461,15 +487,8 @@ function popGrade()
     setCriterionAverage(currentCriterion);
 }
 
-/* Add a grade, in numerical format, to the current criterion and calculate averages. */ 
-function addGrade(grade)
+function showLetterGrade()
 {
-    criterions[currentCriterion]["currentGrades"].push(grade);
-    let currentGrades = criterions[currentCriterion]["currentGrades"];
-    criterions[currentCriterion]["currentAverage"] = gradeAverage(currentGrades);
-
-    showGrades(currentCriterion);
-
     let finalLetterGrade = determineLetterGrade(criterions);
     let finalLetterGradeRaw = determineLetterGradeRaw(criterions);
 
@@ -493,6 +512,17 @@ function addGrade(grade)
         document.getElementById("lettergrade").title = letterGradeText;
         document.getElementById("lettergrade-text").innerText = letterGradeText;
     }
+}
+
+/* Add a grade, in numerical format, to the current criterion and calculate averages. */ 
+function addGrade(grade)
+{
+    criterions[currentCriterion]["currentGrades"].push(grade);
+    let currentGrades = criterions[currentCriterion]["currentGrades"];
+    criterions[currentCriterion]["currentAverage"] = gradeAverage(currentGrades);
+
+    showGrades(currentCriterion);
+    showLetterGrade();
 }
 
 
@@ -606,7 +636,7 @@ function exportGrades()
         let gradeString = "";
 
         for (let j = 0; j < grades.length; j++)
-            gradeString += criterionGradeToString(grades[j]) + " ";
+            gradeString += gradeToString(grades[j]) + " ";
 
         table += `<td>${criterion}</td>`;
         table += `<td>${gradeString}</td>`;        
@@ -657,14 +687,14 @@ function fillInGradesHandler(classArray)
     for (let i = 0; i < classArray.length; i++)
         textRepresentation += `${i}: ${classArray[i].toString()}`;
 
-    textRepresentation += "99: exit";
-
     let selection = null;
     let classSelection = null;
 
     while (true)
     {
         let whichOne = prompt(textRepresentation);
+        if (whichOne == null)
+            return;
 
         /* Sanity check. */
         if (!isNumeric(whichOne)) 
@@ -672,10 +702,6 @@ function fillInGradesHandler(classArray)
             alert(`${whichOne} is not a valid input.`);
             continue;
         }
-
-        /* Exit out of the function. */
-        if (whichOne == "99")
-            return;
 
         selection = parseInt(whichOne);
 
@@ -690,15 +716,14 @@ function fillInGradesHandler(classArray)
         break;
     }
 
-    console.log(classSelection.toString());
     changeLetterGradeMeta(classSelection.name);
     classSelection.getGrades(criterionsTable => {
         let firstCriterion = null;
 
-        console.log(criterionsTable);
-
         for (const criterion in criterionsTable)
         {
+            console.log(criterion);
+
             if (firstCriterion == null)
                 firstCriterion = criterion;
 
@@ -708,8 +733,6 @@ function fillInGradesHandler(classArray)
             changeCriterion(criterion);
             let grades = criterionsTable[criterion];
 
-            console.log("Grades: " + grades);
-
             for (let i = 0; i < grades.length; i++)
             {
                 aGrade = grades[i];
@@ -718,7 +741,12 @@ function fillInGradesHandler(classArray)
         }
 
         showGrades(firstCriterion);
+        showLetterGrade();
+
+        /* A copy of the criterions table, for resetting usage. */
+        criterionCopy = structuredClone(criterions);
     });
+
 }
 
 function fillInGrades()
@@ -732,11 +760,47 @@ function fillInGrades()
 
     let infiniteCampus = new InfiniteCampus(infiniteCampusBackend, fillInGradesHandler);
 
-    alert("This is experimental! It is not guaranteed to work, especially with DP French or Spanish!");
+    const introMessage = `
+        This is experimental, and it may not work. You also consent to giving over your Infinite Campus credentials. 
+    `.trim();
+
+    alert(introMessage);
 
     let username = prompt("What's your Infinite Campus username?: ");
-    let password = prompt("What's your Infinite Campus password?: ");
+    if (username == null)
+        return;
 
-    infiniteCampus.login(username, password);
+    let password = prompt("What's your Infinite Campus password?: ");
+    if (password == null)
+        return;
+
     importedGrades = true;
+
+    infiniteCampus.login(username, password, ic => {
+        importedGrades = false;
+        alert(`Incorrect password/username credentials for ${ic.username}.`);
+    });
+}
+
+function randomColor()
+{
+    return Math.floor(Math.random()*16777215).toString(16);
+}
+
+function randomColorIntro()
+{
+    document.getElementById("intro").style.color = randomColor();
+}
+
+function oldGrades()
+{
+    if (criterionCopy == null)
+    {
+        alert("There aren't any old grades gotten from the grade getter. Can't proceed.");
+        return;
+    }
+
+    criterions = structuredClone(criterionCopy);
+    showGrades(currentCriterion);
+    showLetterGrade();
 }

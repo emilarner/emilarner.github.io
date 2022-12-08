@@ -18,6 +18,10 @@
         }
     </style>
 
+    <h3>The replit backend instance is available <a href="https://replit.com/@emilarner/infinite-campus-backend#infinitecampus.py">here</a>.</h3>
+
+    <h3>The source code for the backend is available <a href="https://github.com/emilarner/mps-ic-backend-server">here</a>.</h3>
+
     <p>
         In order to automatically get the grades from a student's Infinite Campus, it is required to reverse engineer their API, because they do not make one publicly available for developers. This turned out to be somewhat easy. To help others to do this and to explain how it works, this page will include information regarding that.
     </p>
@@ -44,6 +48,22 @@
     </p>
 
     <p>
-        Once you've selected a class, using its sectionID, we can <i>GET</i> this endpoint to get the grades (<i>kinda</i>): <i>https://milwaukeewi.infinitecampus.org/campus/api/portal/assignment/byDateRange?startDate=2020-12-03T00:00:00&endDate=2099-12-17T00:00:00&sectionID={id}</i>--again, you need the cookies from above set or else it will not work. It's hacky, but we can just set the date ranges to impossibly large to absolutely get everything. We get the grades... but we need to organize the grades by criterions, because that's how MPS Standard's Based Grading works! There are a few IDs associated with the array of grades  
+        Once you've selected a class, using its sectionID, we can <i>GET</i> this endpoint to get the grades (<i>kinda</i>): <i>https://milwaukeewi.infinitecampus.org/campus/api/portal/assignment/byDateRange?startDate=2020-12-03T00:00:00&endDate=2099-12-17T00:00:00&sectionID={id}</i>--again, you need the cookies from above set or else it will not work. It's hacky, but we can just set the date ranges to impossibly large to absolutely get everything. The <i>score</i> field found in the array of assignments will give you your grade in "AD", "PR", etc format. We get the grades... but we need to organize the grades by criterions, because that's how MPS Standard's Based Grading works! There are a few IDs associated with the array of grades, which correspond to the criterion: <i>taskID</i>.  
+    </p>
+
+    <p>
+        In order to get the <i>taskID</i>s that correspond to each criterion, we must call the endpoint at <i>https://milwaukeewi.infinitecampus.org/campus/resources/portal/grades/detail/{id}</i>, where the <i>id</i> field corresponds to the <i>sectionID</i> above (again, with cookies). We are then given an array of "details" (as the JSON block describes), which contain two important things that we want: <i>taskID</i> and <i>taskName</i>. The <i>taskName</i>, unfortunately, is in an odd format, such as: "Criterion A: Demonstrate Knowledge & Understanding". In order to extract the criterion letter from this and then correspond it to its <i>taskID</i>, we need to do some intricate string manipulations. I'm a sloppy programmer, so I just splitted by "Criterion ", got the 1st (2nd element in reality) element, then split that by ":" and got the zeroeth (1st in reality) element of that, since I don't want to deal with REGEX and performance doesn't really matter *I also don't understand REGEX that well). Using a dictionary (Python) or object (JavaScript), we can map the taskID to the extracted criterion letter and vice versa. Using the grades gotten from the endpoint above, we can now throw the taskID from each of them into our dictionary to get the criterion letter, so that we then know where to put that grade in the calculator. We're done. 
+    </p>
+
+    <p>
+        Unfortunately, I thought it would be that easy, but of course: it's not. The endpoint that receives the grades, in actuality, only gets <i>assignments</i>. Most of the time--and depending on the teacher and their preferences--assignments only have one grade; however, there are instances where an assignment could have multiple grades associated with them--and only relying off of the method above will only give you one general grade, which will not work for calculations. Thankfully, there is a flag in the JSON returned that is <i>hasMultipleScores</i>, which will be false or non-existent when it doesn't have multiple scores. Thus, when <i>hasMultipleScores</i> exists and is flagged as true, we need to get those multiple scores somehow, and we need an ID for this specific assignment. The ID, as it turns out, is the <i>objectSectionID</i>. The endpoint that we want to see a more in-depth analysis of an assignment (and its ID) is https://milwaukeewi.infinitecampus.org/campus/api/instruction/curriculum/sectionContent/{assignment_id}, where <i>assignment_id</i> is the <i>objectSectionID</i> that we mentioned earlier. 
+    </p>
+
+    <p>
+        When we call this endpoint, we get a list of scores pertaining to that particular assignment and its ID, through the <i>scores</i> array. However! We have another annoying problem: we don't know what god damn criterion each score goes under (this is very important and if it's out of order, the course final can be drastically different). We have hope, though. There is an array of "gradingAlignments", which each contain a field named <i>taskID</i>--remember, that maybe means criterion! Upon checking the <i>taskID</i>s of the grading alignments, we can indeed confirm that they are corresponding to the <i>taskID</i>s of the criterions. And hey, there are the same number of grading alignments as there are grades... so there must be a 1:1 correspondance, so just loop through both of them at the same time to correlate the criterion to the grade! Again, Infinite Campus loves to make things very difficult, so this is a red-herring. Instead, grading alignments are correlated to grades with the 1:1 correspondence of the <i>alignmentID</i> key in a grading alignment to the <i>groupActivityID</i> in the grade. Thus, iterate through the grading alignments array, make a dictionary/object corresponding a <i>groupActivityID</i>/<i>alignmentID</i> to a <i>taskID</i>, then you have the ability to correlate a grade (using its <i>groupActivityID</i>) to a criterion's ID, which then can be correlated to a criterion letter through more fuckery. We're now finally done.
+    </p>
+
+    <p>
+        One last thing. Sometimes there are assignments given that are merely practice assignments, but which are not exactly put in the gradebook for an actual grade. You can distinguish between these assignments by looking at the <i>isValidRubric</i> flag when going through individual assignments; this was a major point of confusion for a while, but I've finally gotten it done.
     </p>
 </html>
