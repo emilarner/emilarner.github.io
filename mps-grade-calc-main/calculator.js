@@ -5,7 +5,7 @@ Additionally, this program isn't too complex--as of yet--to warrant such a high-
 Really starting to regret it.
 */
 
-const infiniteCampusBackend = "https://infinite-campus-backend.emilarner.repl.co";
+const infiniteCampusBackend = "https://infinite-campus-backend.studio7.repl.co";
 
 var importedGrades = false; 
 
@@ -779,6 +779,8 @@ function fillInGrades()
     infiniteCampus.login(username, password, ic => {
         importedGrades = false;
         alert(`Incorrect password/username credentials for ${ic.username}.`);
+    }, err => {
+        alert(err);
     });
 }
 

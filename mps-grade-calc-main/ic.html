@@ -18,7 +18,7 @@
         }
     </style>
 
-    <h3>The replit backend instance is available <a href="https://replit.com/@emilarner/infinite-campus-backend#infinitecampus.py">here</a>.</h3>
+    <h3>The replit backend instance is available <a href="https://infinite-campus-backend.studio7.repl.co">here</a>.</h3>
 
     <h3>The source code for the backend is available <a href="https://github.com/emilarner/mps-ic-backend-server">here</a>.</h3>
 
@@ -62,6 +62,8 @@
     <p>
         When we call this endpoint, we get a list of scores pertaining to that particular assignment and its ID, through the <i>scores</i> array. However! We have another annoying problem: we don't know what god damn criterion each score goes under (this is very important and if it's out of order, the course final can be drastically different). We have hope, though. There is an array of "gradingAlignments", which each contain a field named <i>taskID</i>--remember, that maybe means criterion! Upon checking the <i>taskID</i>s of the grading alignments, we can indeed confirm that they are corresponding to the <i>taskID</i>s of the criterions. And hey, there are the same number of grading alignments as there are grades... so there must be a 1:1 correspondance, so just loop through both of them at the same time to correlate the criterion to the grade! Again, Infinite Campus loves to make things very difficult, so this is a red-herring. Instead, grading alignments are correlated to grades with the 1:1 correspondence of the <i>alignmentID</i> key in a grading alignment to the <i>groupActivityID</i> in the grade. Thus, iterate through the grading alignments array, make a dictionary/object corresponding a <i>groupActivityID</i>/<i>alignmentID</i> to a <i>taskID</i>, then you have the ability to correlate a grade (using its <i>groupActivityID</i>) to a criterion's ID, which then can be correlated to a criterion letter through more fuckery. We're now finally done.
     </p>
+
+    <img src="img/correlation.png">
 
     <p>
         One last thing. Sometimes there are assignments given that are merely practice assignments, but which are not exactly put in the gradebook for an actual grade. You can distinguish between these assignments by looking at the <i>isValidRubric</i> flag when going through individual assignments; this was a major point of confusion for a while, but I've finally gotten it done.
