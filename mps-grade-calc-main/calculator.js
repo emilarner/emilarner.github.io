@@ -7,6 +7,12 @@ Really starting to regret it.
 
 const infiniteCampusBackend = "https://infinite-campus-backend.studio7.repl.co";
 
+var minute = 60;
+
+var classesCache = null;
+var tokenCache = null;
+var tokenCacheExpiry = 3 * minute;
+
 var importedGrades = false; 
 
 var gradeStringOn = (window.localStorage.getItem("gradeStringOn") == null) ? false : 
@@ -32,6 +38,7 @@ var criterions = {
 };
 
 var criterionCopy = null;
+var blankCriterions = structuredClone(criterions);
 
 const dp_spanish_french_criterions = [
     "E",
@@ -96,6 +103,15 @@ const gradeMessagesForLanguage = {
 };
 
 
+function clearGrades()
+{
+    criterions = structuredClone(blankCriterions);
+
+    changeCriterion("A");
+    showGrades(currentCriterion);
+    showLetterGrade();
+}
+
 function changeLetterGradeMeta(className)
 {
     element = document.getElementById("lettergrade-meta");
@@ -134,6 +150,9 @@ function randomChoice(array)
 /* Calculate the arithmetic mean of all of the grades in a list. */
 function gradeAverage(grades)
 {
+    if (grades.length == 0)
+        return -1;
+
     let sum = 0;
     for (let i = 0; i < grades.length; i++)
         sum += grades[i];
@@ -447,6 +466,12 @@ async function dp_spanish_french_mode()
     languageMode = true;
 }
 
+function popGradeSanityCheck()
+{
+    if (criterions[currentCriterion]["currentGrades"].length == 0)
+        criterions[currentCriterion]["currentAverage"] = -1;
+}
+
 function popGradeByID(event)
 {
     let id = parseInt(event.target.id) - 1;
@@ -487,31 +512,44 @@ function popGrade()
     setCriterionAverage(currentCriterion);
 }
 
-function showLetterGrade()
+function letterGradeText(rawScore, letterGrade, letterGradeStatus)
 {
-    let finalLetterGrade = determineLetterGrade(criterions);
-    let finalLetterGradeRaw = determineLetterGradeRaw(criterions);
-
     document.getElementById("lettergrade-raw").innerText = 
-                        `Based on the raw score of: ${finalLetterGradeRaw}`;
+    `Based on the raw score of: ${rawScore}`;
 
-    document.getElementById("lettergrade").className = "final-grade type-" + finalLetterGrade; 
-    document.getElementById("lettergrade").innerText = finalLetterGrade;
+    
+    document.getElementById("lettergrade").className = "final-grade type-" + letterGrade; 
+    document.getElementById("lettergrade").innerText = letterGrade;
+
     if (languageMode) 
     {
         document.getElementById("lettergrade").style = "color: " + 
-                            languageModeGradeColor(finalLetterGrade);
+                            languageModeGradeColor(letterGrade);
     }
 
     if (gradeStringOn) 
     {
-        let letterGradeText = languageMode ? randomChoice(gradeMessagesForLanguage[finalLetterGrade]) 
+        document.getElementById("lettergrade").title = letterGradeStatus;
+        document.getElementById("lettergrade-text").innerText = letterGradeStatus;
+    }
+
+}
+
+function showLetterGrade()
+{
+    let finalLetterGrade = determineLetterGrade(criterions);
+    if (finalLetterGrade == undefined)
+    {
+        letterGradeText("0.00", "", "Nothing here!");
+        return;
+    }
+
+
+    let finalLetterGradeRaw = determineLetterGradeRaw(criterions);
+    let letterGradeStatus = languageMode ? randomChoice(gradeMessagesForLanguage[finalLetterGrade]) 
                                     : randomChoice(gradeMessages[finalLetterGrade]);
 
-
-        document.getElementById("lettergrade").title = letterGradeText;
-        document.getElementById("lettergrade-text").innerText = letterGradeText;
-    }
+    letterGradeText(finalLetterGradeRaw, finalLetterGrade, letterGradeStatus);
 }
 
 /* Add a grade, in numerical format, to the current criterion and calculate averages. */ 
@@ -523,93 +561,6 @@ function addGrade(grade)
 
     showGrades(currentCriterion);
     showLetterGrade();
-}
-
-
-/* Really starting to regret not using classes, but JavaScript is just such a pain... */
-/* Procedural programming, while it's good in other languages, is a punishment here. */
-/* This is where I really regret also working in a weakly typed, hardly typed language. */
-/* Python's type notation, even though it is extremely weak, would greatly help here... */
-
-/* Returns where you can get zeroes and still get the target grade */
-function zeroesPossible(criterions, target) // -> object { ... }
-{
-    /* We need a fresh copy of the criterions to do our statistical analysis. */
-    let criterionsClone = structuredClone(criterions);
-
-    let criterionNames = Object.keys(criterionsClone);
-
-    let iterator = 0; 
-    
-    /* State how many zeroes in which criterions can be taken and still receive target. */
-    let result = {
-
-    };
-
-    /* Initialize the result. */
-    for (let i = 0; i < criterionNames.length; i++)
-        result[criterionNames[i]] = 0;
-
-
-    let atLeastOne = false;
-    while (true)
-    {
-        /* Cycle, like a clock, around criterions, using modulus! */
-        let index = iterator % criterionNames.length;
-        
-        let currentGrades = criterionsClone[criterionNames[index]]["currentGrades"];
-
-        /* Add a zero to the criterion and calculate its average. */ 
-        criterionsClone[criterionNames[index]]["currentGrades"].push(O);
-        criterionsClone[criterionNames[index]]["currentAverage"] = gradeAverage(currentGrades);
-
-        /* If the letter grade changes away from our target, break: we're done. */
-        if (determineLetterGrade(criterionsClone) != target)
-        {
-            if (!atLeastOne)
-                break;
-
-            /* Try again in the criterions that worked. */
-            atLeastOne = false;
-            iterator = 0;
-            continue;
-        }
-
-        atLeastOne = true;
-
-        /* Otherwise, indicate that a zero can be taken, and increment some variables. */
-        result[criterionNames[index]]++;
-        iterator++;
-    }
-
-    return result;
-}
-
-function displayZeroesPossible()
-{
-    alert("Still under construction... you can do this manually for now.");
-    return;
-
-    const validGrades = ["A", "B", "C", "D", "U"];
-    let targetGrade = prompt("What is your target letter grade?: ");
-
-    if (!validGrades.includes(targetGrade))
-    {
-        alert(`The grade '${targetGrade}' is not a valid grade.`);
-        return;
-    }
-
-    let result = zeroesPossible(criterions, targetGrade);
-    let message = 
-        `You can take the following zeroes in each criterion and still get a grade of ${targetGrade}: \n\n`;
-
-    for (const criterion in result)
-    {
-        let noZeroes = result[criterion];
-        message += `Criterion ${criterion} can take ${noZeroes}\n`;
-    }
-
-    alert(message);
 }
 
 function exportGrades()
@@ -682,7 +633,10 @@ function standardsToNumbers(standard)
 
 function fillInGradesHandler(classArray)
 {
-    let textRepresentation = "";
+    classesCache = classArray;
+    tokenCache = new Token(classArray[0].token);
+
+    let textRepresentation = "Choose the class by its index: \n";
 
     for (let i = 0; i < classArray.length; i++)
         textRepresentation += `${i}: ${classArray[i].toString()}`;
@@ -717,13 +671,13 @@ function fillInGradesHandler(classArray)
     }
 
     changeLetterGradeMeta(classSelection.name);
+
+
     classSelection.getGrades(criterionsTable => {
         let firstCriterion = null;
 
         for (const criterion in criterionsTable)
         {
-            console.log(criterion);
-
             if (firstCriterion == null)
                 firstCriterion = criterion;
 
@@ -751,18 +705,20 @@ function fillInGradesHandler(classArray)
 
 function fillInGrades()
 {
-    if (importedGrades)
-    {
-        alert("You've already imported grades. Refresh the page to do it again for a new class.");
-        return;
-    }
-
+    clearGrades();
 
     let infiniteCampus = new InfiniteCampus(infiniteCampusBackend, fillInGradesHandler);
 
     const introMessage = `
         This is experimental, and it may not work. You also consent to giving over your Infinite Campus credentials. 
     `.trim();
+
+    /* If we are able to used cached login information. */
+    if (tokenCache != null && !tokenCache.isExpired(tokenCacheExpiry) && classesCache != null)
+    {
+        fillInGradesHandler(classesCache);
+        return;
+    }
 
     alert(introMessage);
 
@@ -777,7 +733,6 @@ function fillInGrades()
     importedGrades = true;
 
     infiniteCampus.login(username, password, ic => {
-        importedGrades = false;
         alert(`Incorrect password/username credentials for ${ic.username}.`);
     }, err => {
         alert(err);

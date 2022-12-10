@@ -27,6 +27,24 @@ const gradeValues = {
     O: 0
 };
 
+class Token 
+{
+    constructor(token)
+    {
+        this.token = token;
+        this.timestamp = this.now();
+    }
+
+    now()
+    {
+        return Math.floor(Date.now() / 1000);
+    }
+
+    isExpired(expirationTime)
+    {
+        return this.now() >= (this.timestamp + expirationTime);
+    }
+}
 
 class Class
 {
