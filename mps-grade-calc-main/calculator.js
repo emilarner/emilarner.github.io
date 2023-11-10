@@ -5,7 +5,7 @@ Additionally, this program isn't too complex--as of yet--to warrant such a high-
 Really starting to regret it.
 */
 
-const infiniteCampusBackend = "https://infinite-campus-backend.studio7.repl.co";
+const infiniteCampusBackend = "https://infinite-campus-backend.emilarner.repl.co";
 
 var minute = 60;
 
