@@ -14,6 +14,10 @@ var classSelectionDialog = null;
 var loginDialog = null;
 var errorDialog = null;
 
+var waitDialog = null;
+var canvas = null;
+var context = null;
+
 const minute = 60;
 
 var classesCache = null;
@@ -659,7 +663,13 @@ function classDialogManager(classArray)
     /* yes, we're doing this again! */
     let finalHTML = "<h1>Please select a class to pull grades from: </h1>";
     for (let i = 0; i < classArray.length; i++)
-        finalHTML += `<div id="class-selection" onclick="classDialogSelect(${i});"><h3><a>${classArray[i].name}</a></h3></div>`;
+    {
+        /* Remove any ACP results--they mean nothing! */
+        if (classArray[i].name.includes("ACADEMIC CAREER PLAN"))
+            continue;
+
+        finalHTML += `<div class="class-selection" onclick="classDialogSelect(${i});"><h3><a>${classArray[i].name}</a></h3></div>`;
+    }
     
     /* Set the HTML of the dialog and show it. Beautiful code! */
     classSelectionDialog.innerHTML = finalHTML;
@@ -668,6 +678,9 @@ function classDialogManager(classArray)
 
 function fillInGradesHandler(classArray)
 {
+    clearInterval(waitDialogInterval);
+    waitDialog.close();
+
     classesCache = classArray;
     tokenCache = new Token(classArray[0].token);
     classDialogManager(classArray);
@@ -679,6 +692,26 @@ function displayError(msg)
     errorDialog.showModal();
 }
 
+
+/* Clear a canvas, making it all black. */
+/*function clearCanvas(canvas, canvasContext)
+{
+    canvasContext.fillStyle = "black";
+    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+}
+*/
+
+function waitDialogOpen()
+{
+    canvas.addEventListener("click", change_angle);
+
+    context = canvas.getContext("2d");
+    context.strokeStyle = "green";
+    waitDialog.showModal();
+
+    waitDialogInterval = setInterval(Math.floor(Math.random() *2 ) == 0 ? do_shit : do_shit_pyramid, 50);
+}
+
 function loginDialogSignIn()
 {
     loginDialog.close();
@@ -686,6 +719,8 @@ function loginDialogSignIn()
 
     let username = document.getElementById("ic-username").value;
     let password = document.getElementById("ic-password").value;
+
+    waitDialogOpen();
 
     infiniteCampus.login(username, password, ic => {
         displayError("Invalid credentials for " + ic.username);

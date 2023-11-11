@@ -4,6 +4,7 @@
     <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
         <script src="infinitecampus.js" type="text/javascript"></script>
+        <script src="3d_rotation.js" type="text/javascript"></script>
         <script src="calculator.js" type="text/javascript"></script>
     </head>
 
@@ -96,8 +97,6 @@
             display: inline-block;
         }
 
-
-
         .datatable, td, th
         {
             border: 2px white solid;
@@ -118,10 +117,20 @@
         .class-selection
         {
             border: 2px white dashed;
-
         }
 
+        .class-selection:hover
+        {
+            opacity: 0.7;
+        }
+
+        input
+        {
+            padding: 8px;
+            border: 2px dashed white;
+        }
     </style>
+    
     <body>
         <h1 id="intro" onclick="randomColorIntro();">
             MPS Grade Calculator
@@ -141,7 +150,7 @@
 
         <dialog id="authentication-ic">
             <h1>Please enter your Infinite Campus credentials to continue:</h1>
-            <h3>Username:</h3>
+            <h3>Username (S number, with S):</h3>
             <input type="text" id="ic-username">
             <h3>Password:</h3>
             <input type="password" id="ic-password">
@@ -149,9 +158,7 @@
             <br>
             <div style="display: inline-block;">
                 <button id="authentication-ic-login" style="display: inline-block;">Continue</button>
-                <br>
-                <br>
-                <form method="dialog">
+                <form method="dialog" style="display: inline-block;">
                     <button style="display: inline-block;">Close</button>
                 </form>
             </div>
@@ -166,11 +173,20 @@
             </form>
         </dialog>
 
+        <dialog id="wait-dialog">
+            <h1>Waiting...</h1>
+            <canvas id="wait-dialog-canvas" width="320px" height="240px">
+
+            </canvas>
+        </dialog>
+
         <script>
             noGradesDialog = document.getElementById("no-grades");
             classSelectionDialog = document.getElementById("class-selector");
             loginDialog = document.getElementById("authentication-ic");
             errorDialog = document.getElementById("error-msg-dialog");
+            waitDialog = document.getElementById("wait-dialog");
+            canvas = document.getElementById("wait-dialog-canvas");
 
             showGrades();
             showLetterGrade();
