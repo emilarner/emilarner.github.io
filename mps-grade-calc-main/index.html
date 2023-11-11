@@ -101,6 +101,23 @@
         .datatable, td, th
         {
             border: 2px white solid;
+        }
+
+        dialog
+        {
+            border: white 2px dashed;
+            background-color: black;
+            color: white;
+        }
+
+        dialog::backdrop 
+        {
+            backdrop-filter: blur(4px);
+        }
+
+        .class-selection
+        {
+            border: 2px white dashed;
 
         }
 
@@ -109,9 +126,52 @@
         <h1 id="intro" onclick="randomColorIntro();">
             MPS Grade Calculator
         </h1>
-        <h5>Version: 1.5 - Infinite Campus Integration + Better</h5>
+        <h5>Version: 1.6 - Infinite Campus Integration + Better</h5>
         
+        <dialog id="no-grades" style="text-align: center;">
+            <h2>There have been no grades imported, so we can't reset to a default state.</h2>
+            <form method="dialog">
+            <button>X</button>
+            </form>
+        </dialog>
+
+        <dialog id="class-selector">
+
+        </dialog>
+
+        <dialog id="authentication-ic">
+            <h1>Please enter your Infinite Campus credentials to continue:</h1>
+            <h3>Username:</h3>
+            <input type="text" id="ic-username">
+            <h3>Password:</h3>
+            <input type="password" id="ic-password">
+            <br>
+            <br>
+            <div style="display: inline-block;">
+                <button id="authentication-ic-login" style="display: inline-block;">Continue</button>
+                <br>
+                <br>
+                <form method="dialog">
+                    <button style="display: inline-block;">Close</button>
+                </form>
+            </div>
+        </dialog>
+
+        <dialog id="error-msg-dialog">
+            <h1 style="color: red;">Error:</h1>
+            <br>
+            <h3 id="error-msg"></h3>
+            <form method="dialog">
+                <button>X</button>
+            </form>
+        </dialog>
+
         <script>
+            noGradesDialog = document.getElementById("no-grades");
+            classSelectionDialog = document.getElementById("class-selector");
+            loginDialog = document.getElementById("authentication-ic");
+            errorDialog = document.getElementById("error-msg-dialog");
+
             showGrades();
             showLetterGrade();
         </script>
@@ -147,7 +207,6 @@
 
         <button onclick="exportGrades()" style="text-align: left;display: inline-block;">Export</button>
         <button onclick="window.open('notes.html');" style="text-align: left;display: inline-block;">Notes</button>
-        <button onclick="toggleGradeStrings();">Toggle Texts</button>
         <button onclick="fillInGrades();">Grade Getter</button>
         <button onclick="oldGrades();">Reset</button>
         <button onclick="window.open('ic.html');">IC API</button>

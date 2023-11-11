@@ -5,9 +5,16 @@ Additionally, this program isn't too complex--as of yet--to warrant such a high-
 Really starting to regret it.
 */
 
-const infiniteCampusBackend = "https://infinite-campus-backend.emilarner.repl.co/";
+/* make sure there is no trailing / vvvv */
+const infiniteCampusBackend = "https://infinite-campus-backend.emilarner.repl.co";
+const infiniteCampus = new InfiniteCampus(infiniteCampusBackend, fillInGradesHandler);
 
-var minute = 60;
+var noGradesDialog = null;
+var classSelectionDialog = null;
+var loginDialog = null;
+var errorDialog = null;
+
+const minute = 60;
 
 var classesCache = null;
 var tokenCache = null;
@@ -85,22 +92,6 @@ const B = [2.745, 3.390];
 const C = [2.145, 2.740];
 const D = [1.595, 2.140];
 const U = [0.000, 1.590];
-
-const gradeMessages = {
-    "A": ["Excellent!", "Very nice... now keep it", "It can't get much better.", "an A."],
-    "B": ["Yeah... excellent... sure", "Better than nothing, I guess?", "B"],
-    "C": ["Uhh... excellent..?", "Average grade", "It's.... a C!"],
-    "D": ["D's get degrees!", "Not very good at all.", "It's a D."],
-    "U": ["Short for 'U failed lol xD'", "Failed", "U failed."]
-};
-
-const gradeMessagesForLanguage = {
-    "A": ["Superhuman", "You did the impossible.", "Impossible."],
-    "B": ["Close to superhuman", "What???", "Interesting..."],
-    "C": ["Excellent! Basically an A", "Top tier grade", "Relatively an A."],
-    "D": ["Try a little harder", "Basically a B", "Kinda like a B"],
-    "U": ["Short for 'U failed lol xD'", "Failed, but I don't blame you", "U failed... trying"]
-};
 
 
 function clearGrades()
@@ -510,9 +501,10 @@ function popGrade()
     document.getElementById("lettergrade").innerText = finalLetterGrade;
 
     setCriterionAverage(currentCriterion);
+    showGrades(currentCriterion);
 }
 
-function letterGradeText(rawScore, letterGrade, letterGradeStatus)
+function letterGradeText(rawScore, letterGrade)
 {
     document.getElementById("lettergrade-raw").innerText = 
     `Based on the raw score of: ${rawScore}`;
@@ -526,13 +518,6 @@ function letterGradeText(rawScore, letterGrade, letterGradeStatus)
         document.getElementById("lettergrade").style = "color: " + 
                             languageModeGradeColor(letterGrade);
     }
-
-    if (gradeStringOn) 
-    {
-        document.getElementById("lettergrade").title = letterGradeStatus;
-        document.getElementById("lettergrade-text").innerText = letterGradeStatus;
-    }
-
 }
 
 function showLetterGrade()
@@ -546,10 +531,8 @@ function showLetterGrade()
 
 
     let finalLetterGradeRaw = determineLetterGradeRaw(criterions);
-    let letterGradeStatus = languageMode ? randomChoice(gradeMessagesForLanguage[finalLetterGrade]) 
-                                    : randomChoice(gradeMessages[finalLetterGrade]);
 
-    letterGradeText(finalLetterGradeRaw, finalLetterGrade, letterGradeStatus);
+    letterGradeText(finalLetterGradeRaw, finalLetterGrade);
 }
 
 /* Add a grade, in numerical format, to the current criterion and calculate averages. */ 
@@ -563,6 +546,7 @@ function addGrade(grade)
     showLetterGrade();
 }
 
+/* Export the grades to a table. VERY shitty code. */
 function exportGrades()
 {
     gradeTable = document.getElementById("gradeTable");
@@ -574,6 +558,7 @@ function exportGrades()
     let table = "<table class='datatable'>";
     table += "<tr>";
     table += "<th>Criterion</th>";
+    table += "<th>Criterion Avg.</th>"
     table += "<th>Grades</th>";
     table += "</tr>";
 
@@ -590,6 +575,7 @@ function exportGrades()
             gradeString += gradeToString(grades[j]) + " ";
 
         table += `<td>${criterion}</td>`;
+        table += `<td>${gradeToString(determineCriterionGrade(criterions[criterion]["currentAverage"]))}</td>`;
         table += `<td>${gradeString}</td>`;        
 
         table += "</tr>";
@@ -599,6 +585,7 @@ function exportGrades()
     gradeTable.innerHTML = table;
 }
 
+/* yanked from stackoverflow or whyatever */
 function isNumeric(str) 
 {
     if (typeof str != "string") return false // we only process strings!  
@@ -613,6 +600,7 @@ function toggleGradeStrings()
     window.localStorage.setItem("gradeStringOn", opposite);
 }
 
+/* No switch required, does performance even matter? */
 function standardsToNumbers(standard)
 {
     if (standard == "AD")
@@ -631,48 +619,12 @@ function standardsToNumbers(standard)
         return 0;
 }
 
-function fillInGradesHandler(classArray)
+function classDialogSelect(index)
 {
-    classesCache = classArray;
-    tokenCache = new Token(classArray[0].token);
-
-    let textRepresentation = "Choose the class by its index: \n";
-
-    for (let i = 0; i < classArray.length; i++)
-        textRepresentation += `${i}: ${classArray[i].toString()}`;
-
-    let selection = null;
-    let classSelection = null;
-
-    while (true)
-    {
-        let whichOne = prompt(textRepresentation);
-        if (whichOne == null)
-            return;
-
-        /* Sanity check. */
-        if (!isNumeric(whichOne)) 
-        {
-            alert(`${whichOne} is not a valid input.`);
-            continue;
-        }
-
-        selection = parseInt(whichOne);
-
-        /* If it's outside of the range. */
-        if (!(0 <= selection && selection <= (classArray.length - 1)))
-        {
-            alert(`${whichOne} is outside of the range of 0-${classArray.length - 1}`);
-            continue;
-        }
-
-        classSelection = classArray[selection];
-        break;
-    }
+    classSelectionDialog.close();
+    let classSelection = classesCache[index];
 
     changeLetterGradeMeta(classSelection.name);
-
-
     classSelection.getGrades(criterionsTable => {
         let firstCriterion = null;
 
@@ -700,18 +652,51 @@ function fillInGradesHandler(classArray)
         /* A copy of the criterions table, for resetting usage. */
         criterionCopy = structuredClone(criterions);
     });
+}
 
+function classDialogManager(classArray)
+{
+    /* yes, we're doing this again! */
+    let finalHTML = "<h1>Please select a class to pull grades from: </h1>";
+    for (let i = 0; i < classArray.length; i++)
+        finalHTML += `<div id="class-selection" onclick="classDialogSelect(${i});"><h3><a>${classArray[i].name}</a></h3></div>`;
+    
+    /* Set the HTML of the dialog and show it. Beautiful code! */
+    classSelectionDialog.innerHTML = finalHTML;
+    classSelectionDialog.showModal();
+}
+
+function fillInGradesHandler(classArray)
+{
+    classesCache = classArray;
+    tokenCache = new Token(classArray[0].token);
+    classDialogManager(classArray);
+}
+
+function displayError(msg)
+{
+    document.getElementById("error-msg").innerText = msg;
+    errorDialog.showModal();
+}
+
+function loginDialogSignIn()
+{
+    loginDialog.close();
+    importedGrades = true;
+
+    let username = document.getElementById("ic-username").value;
+    let password = document.getElementById("ic-password").value;
+
+    infiniteCampus.login(username, password, ic => {
+        displayError("Invalid credentials for " + ic.username);
+    }, err => {
+        displayError(err);
+    });
 }
 
 function fillInGrades()
 {
     clearGrades();
-
-    let infiniteCampus = new InfiniteCampus(infiniteCampusBackend, fillInGradesHandler);
-
-    const introMessage = `
-        This is experimental, and it may not work. You also consent to giving over your Infinite Campus credentials. 
-    `.trim();
 
     /* If we are able to used cached login information. */
     if (tokenCache != null && !tokenCache.isExpired(tokenCacheExpiry) && classesCache != null)
@@ -720,28 +705,21 @@ function fillInGrades()
         return;
     }
 
-    alert(introMessage);
+    document.getElementById("authentication-ic-login").addEventListener("click", loginDialogSignIn);
 
-    let username = prompt("What's your Infinite Campus username?: ");
-    if (username == null)
-        return;
+    loginDialog.showModal();
 
-    let password = prompt("What's your Infinite Campus password?: ");
-    if (password == null)
-        return;
-
-    importedGrades = true;
-
-    infiniteCampus.login(username, password, ic => {
-        alert(`Incorrect password/username credentials for ${ic.username}.`);
-    }, err => {
-        alert(err);
+    /* Allow the enter key to be used for signing in. */
+    loginDialog.addEventListener("keyup", (e) => {
+        /* Enter key. */
+        if (e.keyCode == 13)
+            loginDialogSignIn();
     });
 }
 
 function randomColor()
 {
-    return Math.floor(Math.random()*16777215).toString(16);
+    return Math.floor(Math.random() * 16777215).toString(16);
 }
 
 function randomColorIntro()
@@ -753,7 +731,7 @@ function oldGrades()
 {
     if (criterionCopy == null)
     {
-        alert("There aren't any old grades gotten from the grade getter. Can't proceed.");
+        noGradesDialog.showModal();
         return;
     }
 
