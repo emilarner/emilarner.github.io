@@ -686,10 +686,16 @@ function fillInGradesHandler(classArray)
     classDialogManager(classArray);
 }
 
-function displayError(msg)
+function displayError(msg, loginError = false)
 {
     document.getElementById("error-msg").innerText = msg;
     errorDialog.showModal();
+
+    if (loginError)
+    {
+        clearInterval(waitDialogInterval);
+        waitDialog.close();
+    }
 }
 
 
@@ -709,7 +715,7 @@ function waitDialogOpen()
     context.strokeStyle = "green";
     waitDialog.showModal();
 
-    waitDialogInterval = setInterval(Math.floor(Math.random() *2 ) == 0 ? do_shit : do_shit_pyramid, 50);
+    waitDialogInterval = setInterval(Math.floor(Math.random() * 2 ) == 0 ? do_shit : do_shit_pyramid, 50);
 }
 
 function loginDialogSignIn()
@@ -719,13 +725,27 @@ function loginDialogSignIn()
 
     let username = document.getElementById("ic-username").value;
     let password = document.getElementById("ic-password").value;
+    let captcha = grecaptcha.getResponse();
+    console.log(captcha);
 
     waitDialogOpen();
 
-    infiniteCampus.login(username, password, ic => {
-        displayError("Invalid credentials for " + ic.username);
+    infiniteCampus.login(username, password, captcha, ic => {
+        displayError("Invalid credentials for " + ic.username, true);
     }, err => {
-        displayError(err);
+        displayError(err, true);
+    }, (invite, number) => {
+        
+        /* This user is not invited. */
+        if (invite == null)
+        {
+            document.getElementById("invitation-information").innerHTML = 
+                "You are not invited! Click <a href='invitations.html'>here</a> for more information.";
+            return;
+        }
+
+        document.getElementById("invitation-information").innerText
+         = `Your invitation code: ${invite}`;
     });
 }
 

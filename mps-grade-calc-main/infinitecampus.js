@@ -203,24 +203,35 @@ class InfiniteCampus
         this.getClasses(tok);
     }
 
-    login(username, password, on_autherr, on_err)
+    login(username, password, captcha, on_autherr, on_err, on_invitation = (i, n) => {})
     {
         this.username = username;
 
         postData(`${this.endpoint}/login/`, {
             "username": username,
-            "password": password
-        }).then((token) => {
-            this.token = token;
-
-            if (token == "0")
+            "password": password,
+            "captcha": captcha
+        }).then((data) => {
+            if (data == "bad-auth")
             {
                 on_autherr(this);
                 return;
             }
 
+            let dataObject = JSON.parse(data);
+            
+            let token = dataObject.loginToken;
+            let invitation = dataObject.invitationCode;
+            let noInvitations = dataObject.currentInvites; 
+
+            this.token = token;
+
+            on_invitation(invitation, noInvitations);
+
             if (this.getClasses != null)
                 this.getClasses();
+
+
         }).catch(on_err);
     }
 
