@@ -14,6 +14,9 @@ var classSelectionDialog = null;
 var loginDialog = null;
 var errorDialog = null;
 
+var currentWaitTime = 0;
+var currentWaitTimeInterval = null;
+
 var waitDialog = null;
 var canvas = null;
 var context = null;
@@ -678,8 +681,7 @@ function classDialogManager(classArray)
 
 function fillInGradesHandler(classArray)
 {
-    clearInterval(waitDialogInterval);
-    waitDialog.close();
+    waitDialogClose();
 
     classesCache = classArray;
     tokenCache = new Token(classArray[0].token);
@@ -692,10 +694,7 @@ function displayError(msg, loginError = false)
     errorDialog.showModal();
 
     if (loginError)
-    {
-        clearInterval(waitDialogInterval);
-        waitDialog.close();
-    }
+        waitDialogClose();
 }
 
 
@@ -707,7 +706,14 @@ function displayError(msg, loginError = false)
 }
 */
 
-function waitDialogOpen()
+function waitDialogClose()
+{
+    clearInterval(waitDialogInterval);
+    clearInterval(currentWaitTimeInterval);
+    waitDialog.close();
+}
+
+function waitDialogOpen(timer = 0)
 {
     canvas.addEventListener("click", change_angle);
 
@@ -715,7 +721,25 @@ function waitDialogOpen()
     context.strokeStyle = "green";
     waitDialog.showModal();
 
-    waitDialogInterval = setInterval(Math.floor(Math.random() * 2 ) == 0 ? do_shit : do_shit_pyramid, 50);
+    if (timer != 0)
+    {
+        currentWaitTime = timer;
+        document.getElementById("wait-dialog-seconds").innerText = `Cool Down: Waiting... ${timer} seconds`;
+        currentWaitTimeInterval = setInterval(() => {
+            currentWaitTime--;
+            if (currentWaitTime == 0)
+                waitDialogClose();
+
+            document.getElementById("wait-dialog-seconds").innerText = `Cool Down: Waiting... ${currentWaitTime} seconds`;
+        }, 1000);
+    }
+
+    waitDialogInterval = setInterval(
+        Math.floor(Math.random() * 2 ) == 0 ? do_shit : do_shit_pyramid,
+        25
+    );
+
+
 }
 
 function loginDialogSignIn()

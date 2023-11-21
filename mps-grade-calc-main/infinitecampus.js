@@ -218,6 +218,12 @@ class InfiniteCampus
                 return;
             }
 
+            if (data == "bad-captcha")
+            {
+                on_err("You did not enter a valid captcha.");
+                return;
+            }
+
             let dataObject = JSON.parse(data);
             
             let token = dataObject.loginToken;
